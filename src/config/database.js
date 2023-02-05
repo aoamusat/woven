@@ -1,12 +1,13 @@
-const Sequelize = require('sequelize');
+const Sequelize = require("sequelize");
+require("dotenv").config();
 
-const Database = new Sequelize(
-    process.env.DATABASE_NAME,
-    process.env.DATABASE_USER,
-    process.env.DATABASE_PASSWORD, {
-        host: 'localhost',
-        dialect: 'mysql'
-    }
-);
+const Database = new Sequelize("woven", "woven", "woven", {
+    host: "localhost",
+    logging: false,
+    dialect: "mysql",
+    dialectOptions: {
+        socketPath: "/tmp/mysql.sock",
+    },
+});
 
 module.exports = Database;
