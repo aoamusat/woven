@@ -4,10 +4,10 @@
     "description": "",
     "main": "index.js",
     "scripts": {
-        "test": "echo \"Error: no test specified\" && exit 1",
         "start": "node index.js",
         "dev": "nodemon index.js",
-        "seed": "node src/utils/seeder.js"
+        "seed": "node src/utils/seed.js",
+        "test": "mocha --timeout 10000"
     },
     "keywords": [],
     "author": "",
@@ -21,6 +21,9 @@
     },
     "devDependencies": {
         "@faker-js/faker": "^7.6.0",
+        "chai": "^4.3.7",
+        "chai-http": "^4.3.0",
+        "mocha": "^10.2.0",
         "nodemon": "^2.0.20",
         "prettier": "2.8.3"
     }

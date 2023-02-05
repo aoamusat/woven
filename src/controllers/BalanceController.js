@@ -14,90 +14,68 @@ const Profile = require("../models/Profile");
  */
 
 const deposit = async (request, response) => {
-    const deposit_amount = request.body.amount;
+    const amount = request.body.amount;
     const { userId } = request.params;
 
-    if (!deposit_amount) {
+    if (!amount) {
         return response.status(400).json({
             message: "Missing required body parameter amount",
         });
     }
 
-    if (deposit_amount < 0) {
+    if (amount < 0) {
         return response.status(400).json({
-            message: "Deposit amount must be a positive number",
+            message: "Deposit amount must be positive",
         });
     }
 
-    if (deposit_amount > request.user.balance) {
+    if (amount > request.user.balance) {
         return response.status(400).json({
-            message: "You do not have enough balance to make this deposit",
-        });
-    }
-    const user = await Profile.findByPk(userId);
-
-    if (!user) {
-        return res.status(404).json({
-            message: "User ID does not exist",
+            message: "Insufficient balance!",
         });
     }
 
-    const contracts = await Contract.findAll({
+    const client = await Profile.findOne({
+        where: { id: userId, type: "client" },
+    });
+    if (!client) return response.status(404);
+
+    const totalOwed = await Job.sum("price", {
         where: {
-            ClientId: request.user.id,
-            "$Jobs.paid$": {
-                [Sequelize.Op.eq]: false,
-            },
+            paid: false,
         },
-        attributes: [
-            [Sequelize.fn("SUM", Sequelize.col("Jobs.price")), "total_owed"],
-        ],
         include: [
             {
-                model: Job,
+                model: Contract,
+                attributes: [],
+                where: {
+                    ClientId: request.user.id,
+                },
             },
         ],
-        // group: ["ClientId"]
     });
 
-    const { total_owed } = contracts[0].dataValues;
+    const MAX_DEPOSIT = totalOwed * 0.25;
 
-    const max_deposit_amount = total_owed * 0.25;
-
-    if (deposit_amount > max_deposit_amount) {
+    if (amount >= MAX_DEPOSIT) {
         return response.status(400).send({
-            message: "Deposit amount cannot exceed 25% of jobs to pay",
-            max_deposit_amount: max_deposit_amount,
+            message:
+                "You can't deposit more than 25% your total of jobs to pay.",
+            MAX_DEPOSIT,
         });
     }
 
     const transaction = await Database.transaction();
 
     try {
-        await user.update(
-            {
-                balance: (user.balance += deposit_amount),
-            },
-            { transaction }
-        );
-        await request.user.update(
-            {
-                balance: (request.user.balance -= deposit_amount),
-            },
-            { transaction }
-        );
-        transaction.commit();
-    } catch (e) {
-        console.log(e);
-        transaction.rollback();
-        return response.status(500).json({
-            message: "Internal Server Error",
-        });
+        await request.user.decrement({ balance: amount });
+        await client.increment({ balance: amount });
+        await transaction.commit();
+        return response.json({ message: "Deposit successful!" });
+    } catch (error) {
+        await transaction.rollback();
+        return response.status(500).json({ message: "Failed to add balance" });
     }
-
-    response.status(200).send({
-        message: "Deposit Ok!",
-    });
 };
 
 module.exports = { deposit };

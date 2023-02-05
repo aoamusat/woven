@@ -36,39 +36,44 @@ const getBestProfession = async (request, response) => {
     const startDate = parseISO(start);
     const endDate = parseISO(end);
 
-    const jobs = await Job.findAll({
-        where: {
-            paid: true,
-            paymentDate: {
-                [Sequelize.Op.between]: [startDate, endDate],
-            },
-        },
+    const profiles = await Profile.findAll({
         attributes: [
-            [Sequelize.fn("SUM", Sequelize.col("jobs.price")), "total_gained"],
+            "profession",
+            [
+                Sequelize.fn("SUM", Sequelize.col("Contractor.Jobs.price")),
+                "total",
+            ],
         ],
+        group: ["profession"],
+        order: Sequelize.literal("total DESC"),
         include: [
             {
                 model: Contract,
-                required: true,
+                attributes: [],
+                as: "Contractor",
                 include: [
                     {
-                        model: Profile,
-                        as: "Client",
-                        required: true,
+                        model: Job,
+                        attributes: [],
+                        where: {
+                            paid: true,
+                            paymentDate: {
+                                [Sequelize.Op.between]: [startDate, endDate],
+                            },
+                        },
                     },
                 ],
             },
         ],
-        group: ["Contract.Client.profession"],
-        order: [["total_gained", "desc"]],
-        raw: true,
     });
+    if (profiles.length === 0) {
+        return response.status(404).send({ message: "Not enough data" });
+    }
 
-    // Get the first item from the array
-    const top_paying = jobs.shift();
+    const profile = profiles.shift();
 
-    return response.json({
-        top_profession: top_paying,
+    response.status(200).send({
+        profession: profile.profession,
     });
 };
 
@@ -82,7 +87,8 @@ const getBestProfession = async (request, response) => {
  */
 const getBestClients = async (request, response) => {
     const { start, end } = request.query;
-    const limit = request.query.limit || 2;
+    let { limit } = request.query;
+    limit = Number.parseInt(limit);
 
     if (!start) {
         return response.status(400).json({
@@ -102,23 +108,31 @@ const getBestClients = async (request, response) => {
         });
     }
 
-    if (!limit) {
-        return response.status(400).json({
-            message: "Limit is required",
-        });
-    }
-
     const startDate = parseISO(start);
     const endDate = parseISO(end);
 
-    const clients = await Profile.findAll({
+    const profiles = await Profile.findAll({
+        attributes: [
+            "id",
+            "name",
+            [Sequelize.fn("SUM", Sequelize.col("price")), "paid"],
+        ],
+        group: [Sequelize.col("id")],
+        order: Sequelize.literal("paid DESC"),
+        limit,
         include: [
             {
+                duplicating: false,
                 model: Contract,
-                as: "Contractor",
+                attributes: [],
+                as: "Client",
+                required: true,
                 include: [
                     {
                         model: Job,
+                        duplicating: false,
+                        attributes: [],
+                        required: true,
                         where: {
                             paid: true,
                             paymentDate: {
@@ -129,24 +143,14 @@ const getBestClients = async (request, response) => {
                 ],
             },
         ],
-        attributes: [
-            [
-                Sequelize.fn("SUM", Sequelize.col("Contractor.Jobs.price")),
-                "total_paid",
-            ],
-            "name",
-            "id",
-        ],
-        order: [["total_paid", "desc"]],
-        group: ["Contractor.id"],
     });
+    if (profiles.length === 0) {
+        return response.status(404).send({
+            message: "Not found!",
+        });
+    }
 
-    return response.json(
-        clients.slice(0, limit).map((client) => ({
-            id: client.id,
-            name: client.name,
-        }))
-    );
+    response.status(200).json(profiles);
 };
 
 module.exports = { getBestProfession, getBestClients };

@@ -23,8 +23,14 @@ const Profile = Database.define("profiles", {
     },
 });
 
+// Define a relationship between Profile and Contract where a Profile is acting as a contractor
 Profile.hasMany(Contract, { as: "Contractor", foreignKey: "ContractorId" });
+Contract.belongsTo(Profile, { as: "Contractor" });
+
+// Define a relationship between Profile and Contract where a Profile is acting as a client
+Profile.hasMany(Contract, { as: "Client", foreignKey: "ClientId" });
 Contract.belongsTo(Profile, { as: "Client" });
+
 Contract.hasMany(Job);
 Job.belongsTo(Contract);
 

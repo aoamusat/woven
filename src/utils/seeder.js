@@ -17,23 +17,90 @@ function getTwoRandomInts(min, max) {
 }
 
 const seed = async () => {
-    // Generate an array of 20 fake profiles
-    const profiles = Array.from({ length: 20 }, () => {
-        let idx = Math.floor(Math.random() * 2);
-        return {
-            name: faker.name.fullName(),
-            type: ["client", "contractor"][idx],
+    await Profile.sync({ force: true });
+    await Contract.sync({ force: true });
+    await Job.sync({ force: true });
+
+    const profiles = [
+        {
+            id: 1,
+            name: "John Doe",
+            profession: "Developer",
             balance: Math.floor(Math.random() * 10000),
-            profession: faker.name.jobTitle(),
-        };
-    });
+            type: "client",
+        },
+        {
+            id: 2,
+            name: "Jane Doe",
+            profession: "Designer",
+            balance: Math.floor(Math.random() * 10000),
+            type: "client",
+        },
+        {
+            id: 3,
+            name: "Bob Smith",
+            profession: "Manager",
+            balance: Math.floor(Math.random() * 10000),
+            type: "client",
+        },
+        {
+            id: 4,
+            name: "Alice Johnson",
+            profession: "Marketing",
+            balance: Math.floor(Math.random() * 10000),
+            type: "client",
+        },
+        {
+            id: 5,
+            name: "Tom Wilson",
+            profession: "Engineer",
+            balance: Math.floor(Math.random() * 10000),
+            type: "client",
+        },
+        {
+            id: 6,
+            name: "Sara Davis",
+            profession: "Consultant",
+            balance: Math.floor(Math.random() * 10000),
+            type: "contractor",
+        },
+        {
+            id: 7,
+            name: "Tim Brown",
+            profession: "Analyst",
+            balance: Math.floor(Math.random() * 10000),
+            type: "contractor",
+        },
+        {
+            id: 8,
+            name: "Emily Clark",
+            profession: "Teacher",
+            balance: Math.floor(Math.random() * 10000),
+            type: "contractor",
+        },
+        {
+            id: 9,
+            name: "Michael Green",
+            profession: "Writer",
+            balance: Math.floor(Math.random() * 10000),
+            type: "contractor",
+        },
+        {
+            id: 10,
+            name: "Jennifer Powell",
+            profession: "Photographer",
+            balance: Math.floor(Math.random() * 10000),
+            type: "contractor",
+        },
+    ];
 
     // Insert the fake profiles into the database
     await Profile.bulkCreate(profiles);
 
+    // Generate random contracts
     const contracts = Array.from({ length: 20 }, () => {
         let idx = Math.floor(Math.random() * 3);
-        const indices = getTwoRandomInts(1, 20);
+        const indices = getTwoRandomInts(1, 10);
 
         return {
             title: faker.lorem.words(2),
@@ -46,9 +113,9 @@ const seed = async () => {
 
     await Contract.bulkCreate(contracts);
 
-    const jobs = Array.from({ length: 20 }, () => {
-        let idx = Math.floor(Math.random() * 2);
-        let idx1 = Math.floor(Math.random() * 20);
+    const jobs = Array.from({ length: 30 }, () => {
+        const idx = Math.floor(Math.random() * 2);
+        const idx1 = Math.floor(Math.random() * 20) + 1;
 
         return {
             title: faker.lorem.words(2),
@@ -61,4 +128,4 @@ const seed = async () => {
     await Job.bulkCreate(jobs);
 };
 
-seed();
+module.exports = seed;
