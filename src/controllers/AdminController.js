@@ -63,10 +63,10 @@ const getBestProfession = async (request, response) => {
         order: [["total_gained", "desc"]],
         raw: true,
     });
-    
+
     // Get the first item from the array
     const top_paying = jobs.shift();
-    
+
     return response.json({
         top_profession: top_paying,
     });

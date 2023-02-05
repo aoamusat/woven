@@ -59,15 +59,15 @@ const deposit = async (request, response) => {
         ],
         // group: ["ClientId"]
     });
-    
-    const {total_owed} = contracts[0].dataValues
+
+    const { total_owed } = contracts[0].dataValues;
 
     const max_deposit_amount = total_owed * 0.25;
 
     if (deposit_amount > max_deposit_amount) {
         return response.status(400).send({
             message: "Deposit amount cannot exceed 25% of jobs to pay",
-            "max_deposit_amount": max_deposit_amount
+            max_deposit_amount: max_deposit_amount,
         });
     }
 
